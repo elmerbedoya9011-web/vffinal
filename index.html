@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Validador Billetes BCB</title>
+
+<style>
+body{
+    margin:0;
+    font-family: Arial, sans-serif;
+    background:#dceeff;
+    text-align:center;
+    color:#1b3a57;
+}
+
+.container{
+    max-width:400px;
+    margin:auto;
+    padding:20px;
+}
+
+h1{
+    font-size:22px;
+    margin-bottom:10px;
+}
+
+img.billetes{
+    width:100%;
+    border-radius:12px;
+    margin-bottom:15px;
+}
+
+select,input{
+    width:100%;
+    padding:12px;
+    margin:8px 0;
+    border-radius:8px;
+    border:1px solid #ccc;
+    font-size:16px;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    margin:6px 0;
+    border:none;
+    border-radius:8px;
+    font-size:16px;
+    cursor:pointer;
+    background:#2f80ed;
+    color:white;
+}
+
+button:hover{
+    background:#1c60b3;
+}
+
+#resultado{
+    margin-top:15px;
+    font-size:18px;
+    font-weight:bold;
+}
+
+.valido{color:green;}
+.novalido{color:red;}
+
+video{
+    width:100%;
+    margin-top:10px;
+    border-radius:10px;
+}
+
+.donacion{
+    margin-top:25px;
+    padding:15px;
+    background:#ffffff80;
+    border-radius:10px;
+}
+
+.qr{
+    width:150px;
+    margin-top:10px;
+}
+
+footer{
+    margin-top:20px;
+    font-size:13px;
+    color:#3d5a80;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Validador de Billetes</h1>
+
+<img src="billetes.jpg" class="billetes" alt="Billetes Bolivia">
+
+<select id="corte">
+  <option value="10">Bs 10</option>
+  <option value="20">Bs 20</option>
+  <option value="50">Bs 50</option>
+</select>
+
+<input type="number" id="serie" placeholder="Ingrese número de serie">
+
+<button onclick="validar()">Verificar</button>
+<button onclick="iniciarCamara()">Escanear con Cámara</button>
+
+<video id="video" autoplay></video>
+
+<div id="resultado"></div>
+
+<div class="donacion">
+    <p>¿Te ayudó la app? ☕</p>
+    <p>Apoya al creador</p>
+    <img src="qr.png" class="qr" alt="QR Donación">
+</div>
+
+<footer>
+© 2026 Validador Billetes BCB - Creado por Elmer Bedoya
+</footer>
+
+</div>
+
+<script>
+
+const rangos = {
+  "10": [[67250001,67700000],[69050001,69500000],[69500001,69950000],[69950001,70400000],[70400001,70850000],[70850001,71300000],[76310012,85139995],[86400001,86850000],[90900001,91350000],[91800001,92250000]],
+  "50": [[77100001,77550000],[78000001,78450000],[78900001,96350000],[96350001,96800000],[96800001,97250000],[98150001,98600000],[104900001,105350000],[105350001,105800000],[106700001,107150000],[107600001,108050000],[108050001,108500000],[109400001,109850000]],
+  "20": [[87280145,91646549],[96650001,97100000],[99800001,100250000],[100250001,100700000],[109250001,109700000],[110600001,111050000],[111050001,111500000],[111950001,112400000],[112400001,112850000],[112850001,113500000],[114200001,114650000],[114650001,115100000],[115100001,115550000],[118700001,119150000],[119150001,119600000],[120500001,120950000]]
+};
+
+function validarNumero(serie){
+  const corte=document.getElementById("corte").value;
+  let noValido=rangos[corte].some(r=>serie>=r[0]&&serie<=r[1]);
+  const res=document.getElementById("resultado");
+
+  if(noValido){
+    res.innerHTML="❌ NO VÁLIDO PARA CIRCULACIÓN";
+    res.className="novalido";
+  }else{
+    res.innerHTML="✅ VÁLIDO";
+    res.className="valido";
+  }
+}
+
+function validar(){
+  const serie=parseInt(document.getElementById("serie").value);
+  if(!serie)return;
+  validarNumero(serie);
+}
+
+async function iniciarCamara(){
+  const video=document.getElementById('video');
+  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
+  video.srcObject=stream;
+
+  if('BarcodeDetector'in window){
+    const detector=new BarcodeDetector();
+    setInterval(async()=>{
+      const codes=await detector.detect(video);
+      for(const code of codes){
+        let numero=parseInt(code.rawValue.replace(/\D/g,''));
+        if(numero){
+          document.getElementById("serie").value=numero;
+          validarNumero(numero);
+        }
+      }
+    },1000);
+  }else{
+    alert("Usa Chrome en Android para escaneo automático.");
+  }
+}
+
+</script>
+
+</body>
+</html>
